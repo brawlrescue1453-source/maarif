@@ -2,39 +2,168 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>9. Sınıf Algoritma Tasarım Paneli</title>
+    <title>9. Sınıf Dinamik Algoritma Paneli</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #f0f2f5; }
-        header { background: #24292e; color: white; padding: 1rem; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; background: #f0f2f5; }
+        header { background: #24292e; color: white; padding: 10px; text-align: center; }
         #main { display: flex; flex: 1; overflow: hidden; }
-        #toolbar { width: 250px; background: #fff; border-right: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        #canvas { flex: 1; position: relative; overflow: auto; background: white; background-image: radial-gradient(#ddd 1px, transparent 1px); background-size: 20px 20px; }
-        #console { width: 300px; background: #1e1e1e; color: #00ff00; padding: 15px; font-family: monospace; overflow-y: auto; }
+        #toolbar { width: 260px; background: #fff; border-right: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        #canvas { flex: 1; position: relative; overflow: auto; background-color: #ffffff; background-image: radial-gradient(#ddd 1px, transparent 1px); background-size: 20px 20px; }
+        #console { width: 320px; background: #1e1e1e; color: #00ff00; padding: 15px; font-family: 'Courier New', Courier, monospace; overflow-y: auto; border-left: 2px solid #444; }
         
         .node { 
-            position: absolute; padding: 10px; min-width: 120px; text-align: center; 
+            position: absolute; padding: 15px; min-width: 140px; text-align: center; 
             cursor: move; user-select: none; border: 2px solid #333; background: white;
-            display: flex; flex-direction: column; gap: 5px;
+            display: flex; flex-direction: column; gap: 8px; box-shadow: 3px 3px 10px rgba(0,0,0,0.1);
         }
         
-        /* 9. Sınıf Standart Şekilleri */
-        .start-end { border-radius: 50px; background: #ffecb3; } /* Elips */
-        .process { background: #e3f2fd; } /* Dikdörtgen */
-        .input-output { transform: skew(-15deg); background: #f1f8e9; } /* Paralelkenar */
+        .start-end { border-radius: 50px; background: #ffecb3; font-weight: bold; }
+        .process { background: #e3f2fd; }
+        .input-output { transform: skew(-15deg); background: #f1f8e9; }
         .input-output * { transform: skew(15deg); }
-        .decision { border: 2px solid #333; background: #fce4ec; transform: rotate(45deg); width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; }
-        .decision-content { transform: rotate(-45deg); font-size: 12px; }
+        
+        .decision { background: #fce4ec; width: 100px; height: 100px; transform: rotate(45deg); display: flex; align-items: center; justify-content: center; margin: 20px; }
+        .decision-content { transform: rotate(-45deg); }
 
-        button { cursor: pointer; padding: 8px; border: 1px solid #ddd; background: #fff; transition: 0.3s; }
-        button:hover { background: #eee; }
-        .run-btn { background: #28a745; color: white; border: none; font-weight: bold; margin-top: 10px; }
+        input, select { padding: 5px; border: 1px solid #ccc; border-radius: 3px; width: 90%; margin: 0 auto; }
+        button { cursor: pointer; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; border-radius: 5px; font-weight: bold; }
+        button:hover { background: #e0e0e0; }
+        .run-btn { background: #28a745; color: white; border: none; font-size: 1.1em; margin-top: 15px; }
+        .run-btn:hover { background: #218838; }
+        hr { width: 100%; border: 0.5px solid #eee; }
     </style>
 </head>
 <body>
 
 <header>
-    <h2>9. Sınıf Algoritma ve Akış Şeması Paneli</h2>
+    <strong>9. Sınıf Algoritma Tasarım Paneli (Etkileşimli)</strong>
 </header>
+
+<div id="main">
+    <div id="toolbar">
+        <button onclick="addNode('start-end', 'BAŞLA')">⚪ Başlangıç</button>
+        <button onclick="addNode('input-output', 'Giriş')">▱ Sayı Girişi</button>
+        <button onclick="addNode('process', 'İşlem')">▭ Matematiksel İşlem</button>
+        <button onclick="addNode('start-end', 'BİTİŞ')">⚪ Bitiş</button>
+        <hr>
+        <button class="run-btn" onclick="runAlgorithm()">▶ ÇALIŞTIR VE HESAPLA</button>
+        <button onclick="clearCanvas()" style="color: #dc3545; font-size: 0.8em;">Temizle</button>
+        <p style="font-size: 0.8em; color: #666;">*Kutuları sürükleyebilir, içlerine sayı yazabilirsin.</p>
+    </div>
+
+    <div id="canvas"></div>
+
+    <div id="console">
+        <strong>[KONSOL ÇIKTISI]</strong><br><hr>
+        <div id="log"></div>
+    </div>
+</div>
+
+<script>
+    let nodeCount = 0;
+
+    function addNode(type, label) {
+        nodeCount++;
+        const canvas = document.getElementById('canvas');
+        const div = document.createElement('div');
+        div.id = 'node-' + nodeCount;
+        div.className = 'node ' + type;
+        div.dataset.type = type;
+        div.style.left = '50px';
+        div.style.top = (nodeCount * 80) + 'px';
+        
+        let content = '';
+        if(type === 'process') {
+            content = `
+                <small>İşlem:</small>
+                <select class="op-type">
+                    <option value="add">Topla (+)</option>
+                    <option value="sub">Çıkar (-)</option>
+                    <option value="mul">Çarp (*)</option>
+                    <option value="mod">Mod Al (%)</option>
+                </select>
+                <input type="number" class="op-val" placeholder="Sayı" value="2">`;
+        } else if(type === 'input-output') {
+            content = `<span>Giriş Değeri:</span><input type="number" class="user-input" value="10">`;
+        } else {
+            content = `<strong>${label}</strong>`;
+        }
+
+        div.innerHTML = content;
+        
+        // Sürükleme Mantığı
+        div.onmousedown = function(e) {
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            let shiftX = e.clientX - div.getBoundingClientRect().left;
+            let shiftY = e.clientY - div.getBoundingClientRect().top;
+            function moveAt(pageX, pageY) {
+                div.style.left = pageX - shiftX - canvas.offsetLeft + 'px';
+                div.style.top = pageY - shiftY - canvas.offsetTop + 'px';
+            }
+            function onMouseMove(e) { moveAt(e.pageX, e.pageY); }
+            document.addEventListener('mousemove', onMouseMove);
+            document.onmouseup = function() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.onmouseup = null;
+            };
+        };
+
+        canvas.appendChild(div);
+    }
+
+    function runAlgorithm() {
+        const log = document.getElementById('log');
+        log.innerHTML = "";
+        let currentResult = 0;
+        let hasInput = false;
+
+        const nodes = Array.from(document.querySelectorAll('.node')).sort((a, b) => parseInt(a.style.top) - parseInt(b.style.top));
+
+        nodes.forEach(node => {
+            const type = node.dataset.type;
+
+            if(type === 'start-end' && node.innerText.includes("BAŞLA")) {
+                log.innerHTML += "> Algoritma Başladı.<br>";
+            }
+
+            if(type === 'input-output') {
+                const val = parseFloat(node.querySelector('.user-input').value);
+                currentResult = val;
+                hasInput = true;
+                log.innerHTML += `> Giriş alınan değer: <b>${val}</b><br>`;
+            }
+
+            if(type === 'process') {
+                const op = node.querySelector('.op-type').value;
+                const factor = parseFloat(node.querySelector('.op-val').value);
+                let oldVal = currentResult;
+
+                if(op === 'add') currentResult += factor;
+                if(op === 'sub') currentResult -= factor;
+                if(op === 'mul') currentResult *= factor;
+                if(op === 'mod') currentResult %= factor;
+
+                log.innerHTML += `> İşlem: ${oldVal} ve ${factor} kullanıldı. Yeni sonuç: <b>${currentResult}</b><br>`;
+            }
+
+            if(type === 'start-end' && node.innerText.includes("BİTİŞ")) {
+                log.innerHTML += `> <span style="color:yellow">Final Sonucu: ${currentResult}</span><br>`;
+                log.innerHTML += "> Algoritma Bitti.<br>";
+            }
+        });
+
+        if(nodes.length === 0) log.innerHTML = "Lütfen önce kutuları ekleyin!";
+    }
+
+    function clearCanvas() {
+        document.getElementById('canvas').innerHTML = "";
+        document.getElementById('log').innerHTML = "";
+        nodeCount = 0;
+    }
+</script>
+
+</body>
+</html></header>
 
 <div id="main">
     <div id="toolbar">
